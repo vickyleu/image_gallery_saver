@@ -1,12 +1,10 @@
 .DS_Store
 .dart_tool/
-
 .packages
 .pub/
 .idea/
-
+*flutter-plugins*
+*flutter_export*
 pubspec.lock
-
 build/
-
 *.iml
