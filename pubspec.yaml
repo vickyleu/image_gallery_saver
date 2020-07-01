@@ -5,7 +5,7 @@ author: quicey <quiceyxu@gmail.com>
 homepage: https://github.com/hui-z/image_gallery_saver
 
 environment:
-  sdk: ">=2.0.0-dev.68.0 <3.0.0"
+  sdk: ">=2.8.0 <3.0.0"
 
 dependencies:
   flutter:
@@ -21,7 +21,4 @@ flutter:
     androidPackage: com.example.imagegallerysaver
     pluginClass: ImageGallerySaverPlugin
 
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
 
