@@ -1,5 +1,6 @@
 package com.example.imagegallerysaver
 
+import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -41,8 +42,9 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
 
   }
 
-  private fun generateFile(extension: String = ""): File {
-    val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + getApplicationName()
+  private fun generateFile(context:Context,extension: String = ""): File {
+
+    val storePath =  ((context.getExternalFilesDir(Environment.MEDIA_SHARED)?.absolutePath?:(Environment.getDataDirectory().absolutePath)) + File.separator + getApplicationName()
     val appDir = File(storePath)
     if (!appDir.exists()) {
       appDir.mkdir()
@@ -56,7 +58,7 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
 
   private fun saveImageToGallery(bmp: Bitmap): String {
     val context = registrar.activeContext().applicationContext
-    val file = generateFile("png")
+    val file = generateFile(context,"png")
     try {
       val fos = FileOutputStream(file)
       bmp.compress(Bitmap.CompressFormat.PNG, 60, fos)
@@ -75,7 +77,7 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
     val context = registrar.activeContext().applicationContext
     return try {
       val originalFile = File(filePath)
-      val file = generateFile(originalFile.extension)
+      val file = generateFile(context,originalFile.extension)
       originalFile.copyTo(file)
 
       val uri = Uri.fromFile(file)
