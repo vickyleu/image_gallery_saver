@@ -1,22 +1,26 @@
 package com.example.imagegallerysaver
 
+import android.R.attr.bitmap
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Bitmap.CompressFormat
 import android.graphics.BitmapFactory
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
+import android.provider.MediaStore
+import android.util.Log
+import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
-import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.PluginRegistry.Registrar
-import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
-import java.lang.RuntimeException
+import java.io.*
+
 
 class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandler {
 
@@ -44,7 +48,8 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
   }
 
   private fun generateFile(context:Context,extension: String = ""): File {
-    val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + getApplicationName()
+
+    val storePath =  (context.getExternalFilesDir(Environment.MEDIA_SHARED)?.absolutePath?:(Environment.getDataDirectory().absolutePath)) + File.separator + getApplicationName()
     val appDir = File(storePath)
     if (!appDir.exists()) {
       appDir.mkdir()
@@ -61,25 +66,130 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
 
   private fun saveImageToGallery(bmp: Bitmap): String {
     val context = registrar.activeContext().applicationContext
-    val file = generateFile(context,"png")
-    try {
-      val fos = FileOutputStream(file)
-      bmp.compress(Bitmap.CompressFormat.PNG, 60, fos)
-      fos.flush()
-      fos.close()
-      val uri = Uri.fromFile(file)
-      context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
-      return uri.toString()
-    } catch (e: IOException) {
-      e.printStackTrace()
+    if (Build.VERSION.SDK_INT >= 29) {
+      val values = ContentValues()
+      values.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/${getApplicationName()}")
+      values.put(MediaStore.MediaColumns.DATE_TAKEN, System.currentTimeMillis())
+      values.put(MediaStore.MediaColumns.IS_PENDING, true)
+      val uri: Uri? = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+      if (uri != null) {
+        try {
+          if (WriteBitmapToStream(bmp, context.contentResolver.openOutputStream(uri))) {
+            values.put(MediaStore.MediaColumns.IS_PENDING, false)
+            context.contentResolver.update(uri, values, null, null)
+          }
+          return uri.toString()
+        } catch (e: Exception) {
+          Log.e("Unity", "Exception:", e)
+          context.contentResolver.delete(uri, null, null)
+        }
+      }
+    }else{
+      val file = generateFile(context,"png")
+      try {
+        val fos = FileOutputStream(file)
+        bmp.compress(Bitmap.CompressFormat.PNG, 60, fos)
+        fos.flush()
+        fos.close()
+        val uri = Uri.fromFile(file)
+        context.sendBroadcast(Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE, uri))
+        return uri.toString()
+      } catch (e: IOException) {
+        e.printStackTrace()
+      }
     }
     return ""
   }
 
+  private fun WriteFileToStream(file: File, out: OutputStream?): Boolean {
+    try {
+      if(out==null)return  false
+      val bos = ByteArrayOutputStream()
+      bitmap.compress(CompressFormat.PNG, 0 /*ignored for PNG*/, bos)
+      val bitmapdata = bos.toByteArray()
+      val `in`= ByteArrayInputStream(bitmapdata)
+      try {
+        val buf = ByteArray(1024)
+        var len: Int
+        while (`in`.read(buf).also { len = it } > 0) out.write(buf, 0, len)
+      } finally {
+        try {
+          `in`.close()
+        } catch (e: Exception) {
+          Log.e("Unity", "Exception:", e)
+        }
+      }
+    } catch (e: Exception) {
+      Log.e("Unity", "Exception:", e)
+      return false
+    } finally {
+      try {
+        out?.close()
+      } catch (e: Exception) {
+        Log.e("Unity", "Exception:", e)
+      }
+    }
+
+    return true
+  }
+
+  private fun WriteBitmapToStream(bitmap: Bitmap, out: OutputStream?): Boolean {
+    try {
+      if(out==null)return  false
+      val bos = ByteArrayOutputStream()
+      bitmap.compress(CompressFormat.PNG, 0 /*ignored for PNG*/, bos)
+      val bitmapdata = bos.toByteArray()
+      val `in`= ByteArrayInputStream(bitmapdata)
+      try {
+        val buf = ByteArray(1024)
+        var len: Int
+        while (`in`.read(buf).also { len = it } > 0) out.write(buf, 0, len)
+      } finally {
+        try {
+          `in`.close()
+        } catch (e: Exception) {
+          Log.e("Unity", "Exception:", e)
+        }
+      }
+    } catch (e: Exception) {
+      Log.e("Unity", "Exception:", e)
+      return false
+    } finally {
+      try {
+        out?.close()
+      } catch (e: Exception) {
+        Log.e("Unity", "Exception:", e)
+      }
+    }
+
+    return true
+  }
+
   private fun saveFileToGallery(filePath: String): String {
-    val context = registrar.activeContext().applicationContext
+    val originalFile = File(filePath)
+//    val context = registrar.activeContext().applicationContext
+//    if (Build.VERSION.SDK_INT >= 29) {
+//      val values = ContentValues()
+//      values.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/${getApplicationName()}")
+//      values.put(MediaStore.MediaColumns.DATE_TAKEN, System.currentTimeMillis())
+//      values.put(MediaStore.MediaColumns.IS_PENDING, true)
+//      val uri: Uri? = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+//      if (uri != null) {
+//        try {
+//          if (WriteFileToStream(originalFile, context.contentResolver.openOutputStream(uri))) {
+//            values.put(MediaStore.MediaColumns.IS_PENDING, false)
+//            context.contentResolver.update(uri, values, null, null)
+//          }
+//          return uri.toString()
+//        } catch (e: Exception) {
+//          Log.e("Unity", "Exception:", e)
+//          context.contentResolver.delete(uri, null, null)
+//        }
+//      }
+//    }else{
+//
+//    }
     return try {
-      val originalFile = File(filePath)
       val file = generateFile(context,originalFile.extension)
       originalFile.copyTo(file)
 
