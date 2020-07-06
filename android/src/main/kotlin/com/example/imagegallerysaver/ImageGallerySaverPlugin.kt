@@ -48,7 +48,8 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
 
   private fun generateFile(context:Context,extension: String = ""): File {
 
-    val storePath =  (context.getExternalFilesDir(Environment.MEDIA_SHARED)?.absolutePath?:(Environment.getDataDirectory().absolutePath)) + File.separator + getApplicationName()
+    val storePath =  Environment.getExternalStorageDirectory() .absolutePath + File.separator + "/DCIM/Camera/"///getApplicationName()
+//    val storePath =  (context.getExternalFilesDir(Environment.MEDIA_SHARED)?.absolutePath?:(Environment.getDataDirectory().absolutePath)) + File.separator + getApplicationName()
     val appDir = File(storePath)
     if (!appDir.exists()) {
       appDir.mkdir()
@@ -83,6 +84,24 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
           context.contentResolver.delete(uri, null, null)
         }
       }
+//    } else if (Build.VERSION.SDK_INT >= 27) {
+//      val values = ContentValues()
+//      values.put(MediaStore.MediaColumns.RELATIVE_PATH, "DCIM/${getApplicationName()}")
+//      values.put(MediaStore.MediaColumns.DATE_TAKEN, System.currentTimeMillis())
+//      values.put(MediaStore.MediaColumns.IS_PENDING, true)
+//      val uri: Uri? = context.contentResolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values)
+//      if (uri != null) {
+//        try {
+//          if (WriteBitmapToStream(bmp, context.contentResolver.openOutputStream(uri))) {
+//            values.put(MediaStore.MediaColumns.IS_PENDING, false)
+//            context.contentResolver.update(uri, values, null, null)
+//          }
+//          return uri.toString()
+//        } catch (e: Exception) {
+//          Log.e("Unity", "Exception:", e)
+//          context.contentResolver.delete(uri, null, null)
+//        }
+//      }
     }else{
       val file = generateFile(context,"png")
       try {
