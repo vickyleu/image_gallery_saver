@@ -16,6 +16,7 @@ import io.flutter.plugin.common.PluginRegistry.Registrar
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.lang.RuntimeException
 
 class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandler {
 
@@ -43,11 +44,13 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
   }
 
   private fun generateFile(context:Context,extension: String = ""): File {
-
-    val storePath =  (context.getExternalFilesDir(Environment.MEDIA_SHARED)?.absolutePath?:(Environment.getDataDirectory().absolutePath)) + File.separator + getApplicationName()
+    val storePath =  Environment.getExternalStorageDirectory().absolutePath + File.separator + getApplicationName()
     val appDir = File(storePath)
     if (!appDir.exists()) {
       appDir.mkdir()
+    }
+    if(!appDir.exists()){
+      throw  RuntimeException("请在AndroidManifest.xml Application节点添加android:requestLegacyExternalStorage=\"true\"")
     }
     var fileName = System.currentTimeMillis().toString()
     if (extension.isNotEmpty()) {
