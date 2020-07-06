@@ -1,6 +1,5 @@
 package com.example.imagegallerysaver
 
-import android.R.attr.bitmap
 import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
@@ -104,21 +103,21 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
   private fun WriteFileToStream(file: File, out: OutputStream?): Boolean {
     try {
       if(out==null)return  false
-      val bos = ByteArrayOutputStream()
-      bitmap.compress(CompressFormat.PNG, 0 /*ignored for PNG*/, bos)
-      val bitmapdata = bos.toByteArray()
-      val `in`= ByteArrayInputStream(bitmapdata)
-      try {
-        val buf = ByteArray(1024)
-        var len: Int
-        while (`in`.read(buf).also { len = it } > 0) out.write(buf, 0, len)
-      } finally {
-        try {
-          `in`.close()
-        } catch (e: Exception) {
-          Log.e("Unity", "Exception:", e)
-        }
-      }
+//      val bos = ByteArrayOutputStream()
+//      bitmap.compress(CompressFormat.PNG, 0 /*ignored for PNG*/, bos)
+//      val bitmapdata = bos.toByteArray()
+//      val `in`= ByteArrayInputStream(bitmapdata)
+//      try {
+//        val buf = ByteArray(1024)
+//        var len: Int
+//        while (`in`.read(buf).also { len = it } > 0) out.write(buf, 0, len)
+//      } finally {
+//        try {
+//          `in`.close()
+//        } catch (e: Exception) {
+//          Log.e("Unity", "Exception:", e)
+//        }
+//      }
     } catch (e: Exception) {
       Log.e("Unity", "Exception:", e)
       return false
@@ -166,6 +165,7 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
   }
 
   private fun saveFileToGallery(filePath: String): String {
+    val context = registrar.activeContext().applicationContext
     val originalFile = File(filePath)
 //    val context = registrar.activeContext().applicationContext
 //    if (Build.VERSION.SDK_INT >= 29) {
