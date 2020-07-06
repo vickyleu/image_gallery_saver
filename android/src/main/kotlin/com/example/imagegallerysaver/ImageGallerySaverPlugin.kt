@@ -59,7 +59,7 @@ class ImageGallerySaverPlugin(private val registrar: Registrar): MethodCallHandl
     }
     var fileName = System.currentTimeMillis().toString()
     if (extension.isNotEmpty()) {
-      fileName += ("." + extension)
+      fileName += (".$extension")
     }
     return File(appDir, fileName)
   }
